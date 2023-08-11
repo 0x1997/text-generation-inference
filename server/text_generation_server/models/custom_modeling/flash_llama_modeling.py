@@ -179,7 +179,7 @@ def _load_gqa(config, prefix: str, weights):
         dim=0,
     )
 
-    if config.quantize != "gptq":
+    if config.quantize != "gptq" and config.quantize != "awq":
         weight = weight.to(dtype=weights.dtype).to(device=weights.device)
 
         head_size = config.hidden_size // config.num_attention_heads
@@ -446,7 +446,6 @@ class FlashLlamaModel(torch.nn.Module):
         cos, sin = self.layers[0].self_attn.rotary_emb.get_cos_sin(
             position_ids, max_s, hidden_states.dtype
         )
-
         residual = None
         for i, layer in enumerate(self.layers):
             hidden_states, residual = layer(

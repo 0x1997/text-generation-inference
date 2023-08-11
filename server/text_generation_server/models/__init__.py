@@ -264,9 +264,9 @@ def get_model(
 
     if sharded:
         raise ValueError("sharded is not supported for AutoModel")
-    if quantize == "gptq":
+    if quantize in ["gptq", "awq"]:
         raise ValueError(
-            "gptq quantization is not supported for AutoModel, you can try to quantize it with `text-generation-server quantize ORIGINAL_MODEL_ID NEW_MODEL_ID`"
+            f"{quantize} quantization is not supported for AutoModel, you can try to quantize it with `text-generation-server quantize ORIGINAL_MODEL_ID NEW_MODEL_ID`"
         )
     elif (quantize == "bitsandbytes-fp4") or (quantize == "bitsandbytes-nf4"):
         raise ValueError(

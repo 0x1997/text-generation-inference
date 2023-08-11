@@ -64,6 +64,9 @@ class FlashLlama(FlashCausalLM):
         weights = Weights(filenames, device, dtype, process_group=self.process_group)
         if config.quantize == "gptq":
             weights._set_gptq_params(model_id)
+        elif config.quantize == "awq":
+            weights.gptq_bits = 4
+            weights.gptq_groupsize = 128
 
         model = FlashLlamaForCausalLM(config, weights)
 

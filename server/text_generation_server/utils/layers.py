@@ -248,6 +248,24 @@ def get_linear(weight, bias, quantize):
                 bits,
                 groupsize,
             )
+    elif quantize == "awq":
+        try:
+            qweight, qzeros, scales, bits, groupsize = weight
+        except Exception:
+            raise NotImplementedError(
+                f"The passed weight is not `awq` compatible, loader needs to be updated."
+            )
+        
+        from awq.quantize.qmodule import WQLinear
+
+        in_features = qweight.shape[0]
+        out_features = qweight.shape[1] * 32 // bits
+        awq_linear = WQLinear(bits, groupsize, in_features, out_features, bias is not None, qweight.device)
+        awq_linear.qweight = qweight
+        awq_linear.qzeros = qzeros
+        awq_linear.scales = scales
+        return awq_linear
+
     else:
         raise NotImplementedError(f"Quantization `{quantize}` is not implemented yet.")
     return linear
@@ -283,8 +301,8 @@ class TensorParallelHead(SuperLayer):
             weight = weights.get_tensor(f"{prefix}.weight")
             should_gather = False
 
-        # GPTQ doesn't quantize heads (nor embeddings)
-        if config.quantize == "gptq":
+        # GPTQ and AWQ don't quantize heads (nor embeddings)
+        if config.quantize in ["gptq", "awq"]:
             quantize = None
         else:
             quantize = config.quantize

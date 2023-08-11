@@ -194,6 +194,23 @@ class Weights:
 
             bits, groupsize = self._get_gptq_params()
             weight = (qweight, qzeros, scales, g_idx, bits, groupsize, False)
+        elif quantize == "awq":
+            try:
+                qweight = torch.cat(
+                    [self.get_sharded(f"{p}.qweight", dim=1) for p in prefixes], dim=1
+                )
+            except RuntimeError:
+                raise RuntimeError(
+                    "Cannot load `awq` weight, make sure the model is already quantized, or quantize it with `text-generation-server quantize ORIGINAL_MODEL_ID NEW_MODEL_ID`"
+                )
+            qzeros = torch.cat(
+                [self.get_sharded(f"{p}.qzeros", dim=1) for p in prefixes], dim=1
+            )
+            scales = torch.cat(
+                [self.get_sharded(f"{p}.scales", dim=1) for p in prefixes], dim=1
+            )
+            bits, groupsize = self._get_gptq_params()
+            weight = (qweight, qzeros, scales, bits, groupsize)
         else:
             w = [self.get_sharded(f"{p}.weight", dim=0) for p in prefixes]
             weight = torch.cat(w, dim=dim)
@@ -282,6 +299,18 @@ class Weights:
                 g_idx = self.get_sharded(f"{prefix}.g_idx", dim=0)
 
             weight = (qweight, qzeros, scales, g_idx, bits, groupsize, use_exllama)
+        elif quantize == "awq":
+            bits, groupsize = self._get_gptq_params()
+            try:
+                qweight = self.get_sharded(f"{prefix}.qweight", dim=0)
+            except RuntimeError:
+                raise RuntimeError(
+                    "Cannot load `awq` weight, make sure the model is already quantized, or quantize it with `text-generation-server quantize ORIGINAL_MODEL_ID NEW_MODEL_ID`"
+                )
+            
+            qzeros = self.get_tensor(f"{prefix}.qzeros")
+            scales = self.get_tensor(f"{prefix}.scales")
+            weight = (qweight, qzeros, scales, bits, groupsize)
         else:
             weight = self.get_sharded(f"{prefix}.weight", dim=1)
         return weight

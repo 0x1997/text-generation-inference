@@ -17,6 +17,7 @@ class Quantization(str, Enum):
     bitsandbytes_nf4 = "bitsandbytes-nf4"
     bitsandbytes_fp4 = "bitsandbytes-fp4"
     gptq = "gptq"
+    awq = "awq"
 
 
 class Dtype(str, Enum):
@@ -174,14 +175,14 @@ def download_weights(
             for p in local_pt_files
         ]
         try:
+            from transformers import AutoConfig
             import transformers
-            import json
 
-
-            config_filename = hf_hub_download(model_id, revision=revision, filename="config.json")
-            with open(config_filename, "r") as f:
-                config = json.load(f)
-            architecture = config["architectures"][0]
+            config = AutoConfig.from_pretrained(
+                model_id,
+                revision=revision,
+            )
+            architecture = config.architectures[0]
 
             class_ = getattr(transformers, architecture)
 
