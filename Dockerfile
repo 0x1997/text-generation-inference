@@ -140,6 +140,16 @@ COPY server/Makefile-vllm Makefile
 # Build specific version of vllm
 RUN make build-vllm
 
+# Build awq CUDA kernels
+FROM kernel-builder as awq-builder
+
+WORKDIR /usr/src
+
+COPY server/Makefile-awq Makefile
+
+# Build specific version of awq
+RUN TORCH_CUDA_ARCH_LIST="8.0;8.6+PTX" make build-awq
+
 # Text Generation Inference base image
 FROM nvidia/cuda:11.8.0-base-ubuntu20.04 as base
 
@@ -178,6 +188,10 @@ COPY --from=exllama-kernels-builder /usr/src/build/lib.linux-x86_64-cpython-39 /
 
 # Copy builds artifacts from vllm builder
 COPY --from=vllm-builder /usr/src/vllm/build/lib.linux-x86_64-cpython-39 /opt/conda/lib/python3.9/site-packages
+
+# Copy builds artifacts from awq builder
+COPY --from=awq-builder /usr/src/llm-awq/awq /opt/conda/lib/python3.9/site-packages/awq
+COPY --from=awq-builder /usr/src/llm-awq/awq/kernels/build/lib.linux-x86_64-cpython-39 /opt/conda/lib/python3.9/site-packages
 
 # Install flash-attention dependencies
 RUN pip install einops --no-cache-dir

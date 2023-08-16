@@ -1,0 +1,14 @@
+awq_commit := efea69e16f862df2c14dece260806e7ea23a9fd4
+
+llm-awq:
+  # Clone awq
+	git clone https://github.com/mit-han-lab/llm-awq.git
+
+build-awq: llm-awq
+	cd llm-awq && git fetch && git checkout $(awq_commit)
+	cd llm-awq/awq/kernels && python setup.py build
+
+install-awq: build-awq
+	pip uninstall awq awq-inference-engine -y || true
+	cd llm-awq && pip install .
+	cd llm-awq/awq/kernels && python setup.py install
