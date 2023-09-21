@@ -1,4 +1,4 @@
-awq_commit := efea69e16f862df2c14dece260806e7ea23a9fd4
+awq_commit := a095b3e041762e6dc05e119634106928055c6764
 
 llm-awq:
   # Clone awq
